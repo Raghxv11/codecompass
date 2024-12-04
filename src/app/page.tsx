@@ -43,7 +43,7 @@ export default function Home() {
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.5 }}
         >
-          <Link href="/datapipeline">
+          <Link href="/dashboard">
             <Button 
               size="lg" 
               className="font-semibold group"
@@ -55,7 +55,7 @@ export default function Home() {
             </Button>
           </Link>
           
-          <Link href="/learn">
+          <Link href="/dashboard">
             <Button 
               variant="outline" 
               size="lg"
