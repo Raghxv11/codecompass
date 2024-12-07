@@ -14,6 +14,8 @@ import {
 import Image from "next/image";
 import { askQuestion } from "./actions";
 import { readStreamableValue } from "ai/rsc";
+import CodeReferences from "./code-references";
+import ReactMarkdown from 'react-markdown';
 
 const AskQuestionCard = () => {
   const project = useProject();
@@ -24,11 +26,14 @@ const AskQuestionCard = () => {
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    setAnswer("");
+    setFilesReferences([]);
     e.preventDefault();
     if (!project?.projectId) return
     setLoading(true);
-    setOpen(true);
     const { output, filesReferences } = await askQuestion(question, project.projectId);
+    setOpen(true);
+
     setFilesReferences(filesReferences);
 
     for await (const delta of readStreamableValue(output)) {
@@ -41,18 +46,37 @@ const AskQuestionCard = () => {
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              <Image src="/logo.jpg" alt="logo" width={32} height={32} />
-              <span className="text-xl font-bold">{question}</span>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <DialogHeader className="pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <Image 
+                src="/logo.jpg" 
+                alt="logo" 
+                width={32} 
+                height={32} 
+                className="rounded-full"
+              />
+              <span className="text-xl font-medium">{question}</span>
             </DialogTitle>
           </DialogHeader>
-            {answer}
-            <h1>Files References</h1>
-            {filesReferences.map(file =>{
-                return <span>{file.fileName}</span>
-            })}
+          <div className="flex flex-col gap-6 overflow-y-auto py-4">
+            <div className="prose dark:prose-invert max-w-none">
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                  <span>Analyzing codebase and generating response...</span>
+                </div>
+              ) : (
+                <ReactMarkdown>{answer}</ReactMarkdown>
+              )}
+            </div>
+            {!loading && filesReferences.length > 0 && (
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-medium mb-4">Referenced Files</h3>
+                <CodeReferences filesReferences={filesReferences} />
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
       <Card className="relative col-span-3">
@@ -67,7 +91,7 @@ const AskQuestionCard = () => {
               onChange={(e) => setQuestion(e.target.value)}
             />
             <div className="h-4"></div>
-            <Button type="submit">
+            <Button type="submit" disabled={loading}>
               Ask
             </Button>
           </form>
