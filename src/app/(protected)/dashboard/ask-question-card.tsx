@@ -105,6 +105,17 @@ const AskQuestionCard = () => {
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                   <span>Analyzing codebase and generating response...</span>
                 </div>
+              ) : answer.includes("This project contains a large number of files") || answer.includes("No files have been indexed") ? (
+                <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-4">
+                  <h3 className="text-lg font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+                    {answer.includes("This project contains a large number of files") 
+                      ? "Large Codebase Detected"
+                      : "No Indexed Files"}
+                  </h3>
+                  <ReactMarkdown className="text-yellow-700 dark:text-yellow-300">
+                    {answer}
+                  </ReactMarkdown>
+                </div>
               ) : (
                 <ReactMarkdown>{answer}</ReactMarkdown>
               )}
@@ -125,7 +136,7 @@ const AskQuestionCard = () => {
         <CardContent>
           <form onSubmit={onSubmit}>
             <Textarea
-              placeholder="Which file should I edit to add change the color of the button?"
+              placeholder="Which files should I edit to modify the button color in the login form?"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
             />

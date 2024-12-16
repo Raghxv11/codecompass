@@ -17,14 +17,55 @@ export async function askQuestion(question: string, projectId: string) {
   console.log('Generated query vector length:', queryVector.length);
   const vectorQuery = `[${queryVector.join(",")}]`;
 
-  // Add a count query first
+  // Add more detailed logging for the count query
   const countResult = await db.$queryRaw`
-    SELECT COUNT(*) 
+    SELECT COUNT(*)::integer as count
     FROM "SourceCodeEmbedding"
     WHERE "projectId" = ${projectId}
-  `;
-  console.log('Total documents in database for project:', countResult);
+  ` as Array<{ count: number }>;
 
+  console.log('Raw count result:', countResult);
+  const totalFiles = countResult[0]?.count ?? 0;
+  console.log('Total files detected:', totalFiles);
+
+  // If there are too many files, provide a specific message
+  if (totalFiles > 100) {
+    const message = "This project contains a large number of files. To get better results, try:\n\n" +
+      "1. Being more specific in your question\n" +
+      "2. Including the specific file name or path you're interested in\n" +
+      "3. Mentioning the feature or component you're working with\n\n" +
+      `Current project size: ${totalFiles} files indexed.`;
+    
+    console.log('Sending large codebase message:', message);
+    
+    // Use immediate update and done to ensure the message is sent
+    await stream.update(message);
+    await stream.done();
+    
+    return {
+      output: stream.value,
+      filesReferences: [],
+      context: "Large codebase notification",
+    };
+  }
+
+  // If we have no files at all, send a different message
+  if (totalFiles === 0) {
+    const message = "No files have been indexed for this project yet. This could be because there are too many files or the repository is not indexed properly.";
+    
+    console.log('Sending no files message:', message);
+    
+    await stream.update(message);
+    await stream.done();
+    
+    return {
+      output: stream.value,
+      filesReferences: [],
+      context: "No indexed files",
+    };
+  }
+
+  // Continue with the rest of the function for normal cases
   const result = (await db.$queryRaw`
     SELECT "fileName", "sourceCode", "summary",
     1- ("summaryEmbedding" <=> ${vectorQuery}::vector) AS similarity
@@ -32,7 +73,7 @@ export async function askQuestion(question: string, projectId: string) {
     WHERE "projectId" = ${projectId}
     ORDER BY 1- ("summaryEmbedding" <=> ${vectorQuery}::vector) DESC
     LIMIT 10
-    `) as { fileName: string; sourceCode: string; summary: string; similarity: number }[];
+  `) as { fileName: string; sourceCode: string; summary: string; similarity: number }[];
 
   console.log('Query results:', result.map(r => ({
     fileName: r.fileName,
