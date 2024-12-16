@@ -6,9 +6,12 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 type Props = {
+    // Array of files found by semantic search
     filesReferences: { fileName: string; sourceCode: string; summary: string }[];
 }
+
 const CodeReferences = ({ filesReferences }: Props) => {
+    // Track currently selected file tab
     const [tab, setTab] = useState(filesReferences[0]?.fileName)
     if (!filesReferences.length) return null;
     

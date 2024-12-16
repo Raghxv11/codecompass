@@ -1,10 +1,15 @@
+// This file handles interactions with Google's Gemini AI model for code analysis
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Document } from "@langchain/core/documents";
 
+// Initialize Gemini AI with API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
 });
+
+// Function to analyze and summarize git commit diffs
 export const summarizeCommit = async (diff: string) => {
   const response = await model.generateContent([
     `You are an expert programmer, and you are trying to summarize a git diff.
@@ -42,6 +47,8 @@ It is given only as an example of appropriate comments. `,
   return response.response.text();
 };
 
+// Function to generate a human-readable summary of code files
+// Used for onboarding junior developers
 export async function summarizeCode(doc: Document) {
   console.log("Getting summary for", doc.metadata.source);
   try {
@@ -61,11 +68,14 @@ export async function summarizeCode(doc: Document) {
   }
 }
 
+// Function to generate vector embeddings for semantic search
+// These embeddings help find relevant code based on natural language queries
 export async function generateEmbedding(summary: string) {
   const model = genAI.getGenerativeModel({
     model: "text-embedding-004",
   });
   const result = await model.embedContent(summary);
   const embedding = result.embedding;
+  console.log('Generated embedding length:', embedding.values.length);
   return embedding.values;
 }

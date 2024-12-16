@@ -3,7 +3,10 @@ import { z } from "zod";
 import { pollCommits } from "@/lib/github";
 import { indexGithubRepo } from "@/lib/github-loader";
 
+// TRPC router handling project-related operations
+
 export const projectRouter = createTRPCRouter({
+    // Creates a new project and indexes its repository
     createProject: protectedProcedure.input(
         z.object({
             name: z.string(),
@@ -27,6 +30,7 @@ export const projectRouter = createTRPCRouter({
         return project; 
     }),
 
+    // Retrieves all projects for the authenticated user
     getProjects: protectedProcedure.query(async ({ctx}) => {
         return await ctx.db.project.findMany({
             where: {
@@ -36,6 +40,8 @@ export const projectRouter = createTRPCRouter({
             }
         })
     }),
+
+    // Gets and updates commit history for a project
     getCommits: protectedProcedure.input(z.object({
         projectId: z.string(),
     })).query(async ({ctx, input}) => {
@@ -43,6 +49,36 @@ export const projectRouter = createTRPCRouter({
         return await ctx.db.commit.findMany({
             where: {
                 projectId: input.projectId,
+            }
+        })
+    }),
+    savedAnswers: protectedProcedure.input(z.object({
+        projectId: z.string(),
+        question: z.string(),
+        answer: z.string(),
+        filesReferenced: z.any()
+    })).mutation(async ({ctx, input}) => {
+        return await ctx.db.question.create({
+            data: {
+                question: input.question,
+                answer: input.answer,
+                filesReferenced: input.filesReferenced,
+                projectId: input.projectId,
+                userId: ctx.user.userId!,
+            }
+        })
+    }),
+    
+    getQuestions: protectedProcedure.input(z.object({
+        projectId: z.string(),
+    })).query(async ({ctx, input}) => {
+        return await ctx.db.question.findMany({
+            where: {projectId: input.projectId},
+            include: {
+                user: true,
+            },
+            orderBy: {
+                createdAt: "desc",
             }
         })
     })

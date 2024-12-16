@@ -1,3 +1,4 @@
+// file to handle the question and answer
 "use server";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createStreamableValue } from "ai/rsc";
@@ -11,17 +12,32 @@ const google = createGoogleGenerativeAI({
 
 export async function askQuestion(question: string, projectId: string) {
   const stream = createStreamableValue();
+  console.log('Generating embedding for question:', question);
   const queryVector = await generateEmbedding(question);
+  console.log('Generated query vector length:', queryVector.length);
   const vectorQuery = `[${queryVector.join(",")}]`;
+
+  // Add a count query first
+  const countResult = await db.$queryRaw`
+    SELECT COUNT(*) 
+    FROM "SourceCodeEmbedding"
+    WHERE "projectId" = ${projectId}
+  `;
+  console.log('Total documents in database for project:', countResult);
+
   const result = (await db.$queryRaw`
     SELECT "fileName", "sourceCode", "summary",
     1- ("summaryEmbedding" <=> ${vectorQuery}::vector) AS similarity
     FROM "SourceCodeEmbedding"
-    WHERE 1- ("summaryEmbedding" <=> ${vectorQuery}::vector) > .5
-    AND "projectId" = ${projectId}
-    ORDER BY similarity DESC
+    WHERE "projectId" = ${projectId}
+    ORDER BY 1- ("summaryEmbedding" <=> ${vectorQuery}::vector) DESC
     LIMIT 10
-    `) as { fileName: string; sourceCode: string; summary: string }[];
+    `) as { fileName: string; sourceCode: string; summary: string; similarity: number }[];
+
+  console.log('Query results:', result.map(r => ({
+    fileName: r.fileName,
+    similarity: r.similarity
+  })));
 
   let context = "";
   if (result.length === 0) {
@@ -32,6 +48,7 @@ export async function askQuestion(question: string, projectId: string) {
       File: ${doc.fileName}
       Source Code: ${doc.sourceCode}
       Summary: ${doc.summary}
+      Similarity: ${doc.similarity}
       `;
     }
   }
@@ -78,5 +95,6 @@ export async function askQuestion(question: string, projectId: string) {
   return {
     output: stream.value,
     filesReferences: result,
+    context: context,
   }
 }
