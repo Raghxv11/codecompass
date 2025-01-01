@@ -28,12 +28,12 @@ export default function Home() {
         className="max-w-3xl text-center space-y-8 mb-12"
       >
         <h1 className="text-5xl font-bold tracking-tighter sm:text-6xl md:text-7xl mt-28">
-          Transform Data, Unleash the Power of
-          <span className="text-primary"> Gen AI</span>
+          Chat with your 
+          <span className="text-primary"> Github Repository</span>
         </h1>
         
         <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto">
-          Cutting-edge AI-powered solution to profile, clean, and transform your data seamlessly
+          Instantly answer questions about your codebase and receive automated commit summaries using AI.
         </p>
 
         <motion.div 
@@ -55,7 +55,7 @@ export default function Home() {
             </Button>
           </Link>
           
-          <Link href="/dashboard">
+          <Link href="/learn-more">
             <Button 
               variant="outline" 
               size="lg"
@@ -72,7 +72,7 @@ export default function Home() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="mt-12 w-full max-w-2xl mx-auto rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg"
         >
-          <img src="/flowchart.png" alt="Data Pipeline Flowchart" className="w-full h-full object-cover" />
+          <img src="/pic.png" alt="" className="w-full h-full object-cover" />
         </motion.div>
       </motion.div>
     </div>
